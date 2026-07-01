@@ -1,30 +1,22 @@
 '''---------------------------------------------------------------------------------
                                 SQL CONFIG
 ---------------------------------------------------------------------------------'''
-
-import os
-
-import os
+# %%
+import sys
+print(sys.executable)
 import pandas as pd
 import numpy as np
-import json
-import ast
 import requests
-from urllib.parse import unquote
-from urllib.parse import quote
-import traceback
-import datetime
-import csv
 import pyodbc
-from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, Float, inspect
-from urllib.parse import urlparse, parse_qs
+from sqlalchemy import create_engine, MetaData, Table, Column, String, Integer, Float, inspect, BigInteger, DateTime, Boolean
 import parse
-# needed to script all programs
-import glob
-import re
-import matplotlib.pyplot as plt
-import sqlalchemy
 
+import matplotlib.pyplot as plt
+import subprocess
+import uuid
+from pathlib import Path
+
+from config.sap_sql_types import infer_sql_types
 
 SQL_SERVER = "dereldb03.ymce.local\\YME_Warehouse"
 SQL_DATABASE = "D2C_Datawarehouse"
@@ -50,7 +42,13 @@ except pyodbc.Error as ex:
 
 
 # Create SQLAlchemy engine
-engine = create_engine(f'mssql+pyodbc:///?odbc_connect={conn_str}', use_setinputsizes=False)
+#engine = create_engine(f'mssql+pyodbc:///?odbc_connect={conn_str}', use_setinputsizes=False)
+
+engine = create_engine(
+    f"mssql+pyodbc:///?odbc_connect={conn_str}",
+    fast_executemany=True,
+    use_setinputsizes=False,
+)
 # Establish a connection
 conn = pyodbc.connect(conn_str)
 # Create a cursor
@@ -62,3 +60,143 @@ cursor = conn.cursor()
 # Print all table names
 #for table in tables:
 #    print(table.table_name)
+
+
+
+# %%
+def infer_sql_types(df):
+
+    dtype_mapping = {}
+
+    for col in df.columns:
+
+        dtype = df[col].dtype
+
+        if pd.api.types.is_datetime64_any_dtype(dtype):
+
+            dtype_mapping[col] = DateTime()
+
+        elif pd.api.types.is_integer_dtype(dtype):
+
+            dtype_mapping[col] = BigInteger()
+
+        elif pd.api.types.is_float_dtype(dtype):
+
+            dtype_mapping[col] = Float()
+
+        elif pd.api.types.is_bool_dtype(dtype):
+
+            dtype_mapping[col] = Boolean()
+
+        else:
+
+            col_lower = col.lower()
+
+            if any(
+                x in col_lower
+                for x in [
+                    "description",
+                    "name",
+                    "text",
+                    "longname",
+                ]
+            ):
+
+                dtype_mapping[col] = String(1000)
+
+            else:
+
+                dtype_mapping[col] = String(100)
+
+    return dtype_mapping
+
+
+
+
+def create_table(df, table_name):
+
+    print(f"\nCreating table {table_name}")
+
+    dtype_mapping = infer_sql_types(df)
+
+    df.head(0).to_sql(
+        name=table_name,
+        con=engine,
+        schema="dbo",
+        if_exists="replace",
+        index=False,
+        dtype=dtype_mapping,
+    )
+
+    print(f"✅ Table {table_name} créée")
+
+
+def write_df(
+    df: pd.DataFrame,
+    table_name: str,
+    chunk_size: int = 100_000,
+):
+
+    total = len(df)
+
+    for start in range(0, total, chunk_size):
+
+        end = min(start + chunk_size, total)
+
+        chunk = df.iloc[start:end]
+
+        chunk.to_sql(
+            name=table_name,
+            con=engine,
+            schema="dbo",
+            if_exists="append",
+            index=False,
+            method=None
+        )
+
+        print(
+            f"{end:,}/{total:,} rows loaded into {table_name}"
+        )
+
+    print(f"✅ {table_name} fully loaded")
+
+
+
+
+def write_df_bcp(
+    df: pd.DataFrame,
+    table_name: str,
+):
+
+    temp_file = Path(
+        f"temp_{uuid.uuid4().hex}.csv"
+    )
+
+    df.to_csv(
+        temp_file,
+        index=False,
+        sep="|",
+        encoding="utf-8",
+    )
+    cmd = [
+        "bcp",
+        f"{SQL_DATABASE}.dbo.{table_name}",
+        "in",
+        str(temp_file),
+        "-S", SQL_SERVER,
+        "-T",
+        "-c",
+        "-t", "|",
+        "-F", "2",
+    ]
+
+    subprocess.run(
+        cmd,
+        check=True
+    )
+
+    temp_file.unlink()
+
+    print(
+        f"{len(df):,} rows loaded into {table_name}"
+    )

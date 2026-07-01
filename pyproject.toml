@@ -5,7 +5,7 @@ description = ""
 authors = [
     {name = "Celine Canziani",email = "celine.canziani@music.yamaha.com"}
 ]
-requires-python = ">=3.13"
+requires-python = ">=3.13,<3.15"
 dependencies = [
     "pandas (>=3.0.3,<4.0.0)",
     "numpy (>=2.5.0,<3.0.0)",
@@ -13,10 +13,17 @@ dependencies = [
     "pyodbc (>=5.3.0,<6.0.0)",
     "parse (>=1.22.1,<2.0.0)",
     "matplotlib (>=3.11.0,<4.0.0)",
-    "sqlalchemy (>=2.0.51,<3.0.0)"
+    "sqlalchemy (>=2.0.51,<3.0.0)",
+    "ipykernel (>=7.3.0,<8.0.0)",
+    "prefect (>=3.7.6,<4.0.0)"
 ]
 
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "ipykernel (>=7.3.0,<8.0.0)"
+]

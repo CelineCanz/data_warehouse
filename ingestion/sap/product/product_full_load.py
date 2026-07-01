@@ -7,15 +7,18 @@ Created on Mon May 11 10:53:07 2026
 import requests
 import pandas as pd
 from requests.auth import HTTPBasicAuth
-from config.sap_utils import HOST, CLIENT, USER, PASSWORD, WINDOW_SIZE, BASE
 
+from config.sap_utils import (
+    sap_session,
+    BASE,
+    CLIENT,
+    WINDOW_SIZE
+)
 
 def fetch_product_entity(entity: str, select_cols: list) -> pd.DataFrame:
     SERVICE = "API_PRODUCT_SRV"
 
-    http = requests.Session()
-    http.auth = HTTPBasicAuth(USER, PASSWORD)
-    http.headers.update({"Accept": "application/json"})
+    http = sap_session()
 
     # ✅ ensure Product is always present
     if "Product" not in select_cols:
