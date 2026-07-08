@@ -1,0 +1,35 @@
+version: 2
+
+sources:
+  - name: sap
+    schema: sap
+
+    tables:
+
+      # Product
+      - name: STG_Product
+      - name: STG_ProductDescription
+      - name: STG_ProductSalesDelivery
+
+      # Sales
+      - name: STG_SalesOrder
+      - name: STG_SalesOrderItem
+      - name: STG_SalesOrderScheduleLine
+
+      # Billing
+      - name: STG_BillingHeader
+      - name: STG_BillingItem
+
+      # Inventory
+      - name: STG_MaterialStock
+      - name: STG_MaterialStockPlant
+
+      # Mapping
+      - name: MAP_ProductHierarchy
+
+      # Purchase
+      - name: STG_PurchaseOrder
+      - name: STG_PurchaseOrderScheduleLine
+
+      # Inbounds
+      - name: STG_InboundDelivery

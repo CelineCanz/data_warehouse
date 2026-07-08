@@ -122,7 +122,7 @@ def create_table(df, table_name):
     df.head(0).to_sql(
         name=table_name,
         con=engine,
-        schema="dbo",
+        schema="sap",
         if_exists="replace",
         index=False,
         dtype=dtype_mapping,
@@ -148,7 +148,7 @@ def write_df(
         chunk.to_sql(
             name=table_name,
             con=engine,
-            schema="dbo",
+            schema="sap",
             if_exists="append",
             index=False,
             method=None
@@ -180,7 +180,7 @@ def write_df_bcp(
     )
     cmd = [
         "bcp",
-        f"{SQL_DATABASE}.dbo.{table_name}",
+        f"{SQL_DATABASE}.sap.{table_name}",
         "in",
         str(temp_file),
         "-S", SQL_SERVER,
