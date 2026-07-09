@@ -33,3 +33,16 @@ sources:
 
       # Inbounds
       - name: STG_InboundDelivery
+
+      #models:
+      - name: INT_Inventory
+        description: Inventory balances enriched with inbound shipping reallocation
+
+      - name: INT_Products
+        description: Product master and product hierarchy attributes
+
+      - name: INT_Sales
+        description: Sales order quantities aggregated by material, plant and storage location
+
+      - name: INT_PurchaseOrder
+        description: Open purchase order quantities used for ATP calculations

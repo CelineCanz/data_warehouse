@@ -63,11 +63,6 @@ def load_sales_order_header() -> pd.DataFrame:
 
     df = pd.json_normalize(rows)
 
-    # Cast dates
-    for col in df.columns:
-        if "Date" in col:
-            df[col] = pd.to_datetime(df[col], errors="coerce")
-
     return df
 
 
@@ -126,11 +121,6 @@ def load_sales_order_item() -> pd.DataFrame:
 
     df = pd.json_normalize(rows)
 
-    # Cast dates
-    for col in df.columns:
-        if "Date" in col:
-            df[col] = pd.to_datetime(df[col], errors="coerce")
-
     return df
 
 
@@ -186,10 +176,5 @@ def load_sales_order_schedule_line() -> pd.DataFrame:
         print(f"→ SalesOrderScheduleLine up to {last_doc}")
 
     df = pd.json_normalize(rows)
-
-    # Cast dates
-    for col in df.columns:
-        if "Date" in col:
-            df[col] = pd.to_datetime(df[col], errors="coerce")
 
     return df
