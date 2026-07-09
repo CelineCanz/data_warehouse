@@ -16,6 +16,43 @@ sales as (
 
 ),
 
+sales_future as (
+
+    select
+
+        i.Material,
+        i.ProductionPlant as Plant,
+        i.StorageLocation,
+
+        sum(
+            cast(i.RequestedQuantity as decimal(18,3))
+        ) as FutureRequestedQty
+
+    from {{ source('sap', 'STG_SalesOrderItem') }} i
+
+    inner join {{ source('sap', 'STG_SalesOrder') }} h
+
+        on i.SalesOrder = h.SalesOrder
+
+    where
+
+        h.RequestedDeliveryDate >= cast(getdate() as date)
+
+        and h.OverallTotalDeliveryStatus in ('A','B')
+
+        and coalesce(
+            ltrim(rtrim(i.SalesDocumentRjcnReason)),
+            ''
+        ) = ''
+
+    group by
+
+        i.Material,
+        i.ProductionPlant,
+        i.StorageLocation
+
+),
+
 purchase_orders as (
 
     select *
@@ -73,6 +110,11 @@ select
 
     sales.SalesOrderItemCount,
 
+    coalesce(
+        sf.FutureRequestedQty,
+        0
+    ) as FutureRequestedQty,
+
     -- Purchase Orders
 
     coalesce(
@@ -90,7 +132,7 @@ select
         0
     ) as PurchaseOrderQty,
 
-        coalesce(
+    coalesce(
         po.FuturePurchaseOrderQty,
         0
     ) as FuturePurchaseOrderQty,
@@ -133,6 +175,12 @@ left join sales
     on inv.Material = sales.Material
    and inv.Plant = sales.Plant
    and inv.StorageLocation = sales.StorageLocation
+
+left join sales_future sf
+
+    on inv.Material = sf.Material
+   and inv.Plant = sf.Plant
+   and inv.StorageLocation = sf.StorageLocation
 
 left join purchase_orders po
 
